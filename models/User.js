@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-// 1. Định nghĩa "Khuôn mẫu" (Schema) cho User
+// 1. Định nghĩa cho User
 const UserSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -30,16 +30,16 @@ const UserSchema = new mongoose.Schema({
 });
 
 // 2. Mã hóa mật khẩu TRƯỚC KHI lưu vào DB
-// Đây là một "hook" (lưỡi câu), nó sẽ tự động chạy trước sự kiện 'save'
+// Đây là một "hook" (lưỡi câu), nó sẽ tự động chạy trước sự kiện save
 UserSchema.pre('save', async function (next) {
   // Chỉ mã hóa nếu mật khẩu được sửa (hoặc tạo mới)
   if (!this.isModified('password')) {
     return next();
   }
 
-  // "Muối" (salt) làm cho mật khẩu an toàn hơn
+  // salt làm cho mật khẩu an toàn hơn
   const salt = await bcrypt.genSalt(10);
-  // Băm (hash) mật khẩu
+  // Băm mật khẩu
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
@@ -49,7 +49,7 @@ UserSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// 4. "Biên dịch" khuôn mẫu thành một Model
+// 4. Biên dịch khuôn mẫu thành một Model
 const User = mongoose.model('User', UserSchema);
 
 module.exports = User;

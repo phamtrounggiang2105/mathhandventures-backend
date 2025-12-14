@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-// Định nghĩa "Khuôn mẫu" (Schema) cho Kết quả game
+// Định nghĩa Khuôn mẫu cho Kết quả game
 const GameResultSchema = new Schema({
   // Liên kết kết quả này với một User cụ thể
-  // 'ref: 'User'' nghĩa là nó sẽ tham chiếu đến ID của một ai đó trong bảng 'User'
+  
   userId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -26,7 +26,7 @@ const GameResultSchema = new Schema({
     default: 0,
   },
   
-  // Phần thưởng (nếu có, ví dụ: 'Huy hiệu hải tặc nhí')
+  // Phần thưởng 
   trophy: {
     type: String,
     default: null,

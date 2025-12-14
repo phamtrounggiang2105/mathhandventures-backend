@@ -9,9 +9,6 @@ const GameResult = require('../models/GameResult');
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // --- 1. API ĐĂNG KÝ (REGISTER) ---
-// @route   POST /api/users/register
-// @desc    Đăng ký người dùng mới (Student hoặc Admin)
-// @access  Public
 router.post('/register', async (req, res) => {
   try {
     const { username, password, role } = req.body;
@@ -35,10 +32,9 @@ router.post('/register', async (req, res) => {
     });
 
     // 4. Lưu user vào DB
-    // (Lưu ý: Mật khẩu sẽ tự động được mã hóa nhờ 'pre-save' hook trong model)
     await user.save();
 
-    // 5. Trả về thông báo thành công (KHÔNG trả về token, user phải tự đăng nhập)
+    // 5. Trả về thông báo thành công 
     res.status(201).json({ msg: 'Tạo tài khoản thành công! Bạn có thể đăng nhập.' });
 
   } catch (err) {
@@ -47,10 +43,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// --- 2. API ĐĂNG NHẬP (LOGIN) ---
-// @route   POST /api/users/login
-// @desc    Đăng nhập và lấy token
-// @access  Public
+// 2. API ĐĂNG NHẬP (LOGIN)
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -67,14 +60,14 @@ router.post('/login', async (req, res) => {
     }
 
     // 3. So sánh mật khẩu
-    // Dùng hàm 'comparePassword' chúng ta đã tạo trong model
+  
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({ msg: 'Tên đăng nhập hoặc mật khẩu không đúng' });
     }
 
     // 4. Tạo JSON Web Token (JWT)
-    // "payload" là thông tin chúng ta muốn mã hóa vào token
+    
     const payload = {
       user: {
         id: user.id, // ID của user trong DB
@@ -84,7 +77,7 @@ router.post('/login', async (req, res) => {
       },
     };
 
-    // Ký (sign) token với key bí mật và đặt hạn 1 ngày
+    
     jwt.sign(
       payload,
       JWT_SECRET,
@@ -105,15 +98,11 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// --- 3. API LẤY TẤT CẢ USERS (CHO ADMIN) ---
-// @route   GET /api/users
-// @desc    Lấy tất cả users (chỉ Admin)
-// @access  Private/Admin
+// 3. API LẤY TẤT CẢ USERS (CHO ADMIN) 
 
-// Khi gọi API này, nó sẽ chạy 'auth' trước, rồi 'admin', rồi mới đến logic
 router.get('/', [auth, admin], async (req, res) => {
   try {
-    // Tìm tất cả user, và loại bỏ trường 'password'
+    
     const users = await User.find().select('-password');
     res.json(users);
   } catch (err) {
@@ -122,10 +111,8 @@ router.get('/', [auth, admin], async (req, res) => {
   }
 });
 
-// --- 4. API XÓA USER (CHO ADMIN) ---
-// @route   DELETE /api/users/:id
-// @desc    Xóa một user (chỉ Admin)
-// @access  Private/Admin
+// 4. API XÓA USER (CHO ADMIN) 
+
 router.delete('/:id', [auth, admin], async (req, res) => {
   try {
     // 1. Tìm user bằng ID (lấy từ URL)
@@ -135,13 +122,13 @@ router.delete('/:id', [auth, admin], async (req, res) => {
       return res.status(404).json({ msg: 'Không tìm thấy người dùng' });
     }
 
-    // 2. (Tùy chọn) Ngăn Admin tự xóa chính mình
+    // 2. Ngăn Admin tự xóa 
     if (user.id === req.user.id) {
       return res.status(400).json({ msg: 'Bạn không thể tự xóa tài khoản của mình' });
     }
 
     // 3. Xóa user khỏi database
-    await user.deleteOne(); // Mongoose 6.x trở lên dùng deleteOne()
+    await user.deleteOne(); 
 
     res.json({ msg: 'Người dùng đã được xóa' });
 
@@ -155,12 +142,8 @@ router.delete('/:id', [auth, admin], async (req, res) => {
   }
 });
 
-// --- 5. API CẬP NHẬT AVATAR ---
-// @route   PUT /api/users/avatar
-// @desc    Cập nhật avatar của người dùng
-// @access  Private (Chỉ cần đăng nhập)
+//  5. API CẬP NHẬT AVATAR 
 
-// Chúng ta chỉ cần middleware 'auth', vì người dùng tự cập nhật của họ
 router.put('/avatar', auth, async (req, res) => {
   try {
     // 1. Lấy tên file avatar từ body (ví dụ: "avatar05.jpg")
@@ -178,10 +161,6 @@ router.put('/avatar', auth, async (req, res) => {
     }
 
     // 3. Cập nhật trường 'avatar'
-    // (Chúng ta cần đảm bảo model 'User.js' có trường 'avatar')
-    // Mở file 'models/User.js' và đảm bảo bạn có dòng:
-    // avatar: { type: String, default: 'avatar01.jpg' }, 
-    // Nếu bạn chưa có, hãy thêm vào.
     
     user.avatar = avatar;
 
@@ -189,7 +168,6 @@ router.put('/avatar', auth, async (req, res) => {
     await user.save();
 
     // 5. Trả về thông tin user đã cập nhật (trừ password)
-    // Chúng ta trả về user mới để frontend cập nhật Local Storage
     const updatedUser = {
       id: user.id,
       username: user.username,
@@ -205,10 +183,10 @@ router.put('/avatar', auth, async (req, res) => {
   }
 });
 
-// --- 5. API THỐNG KÊ (CHO ADMIN) ---
-// @route   GET /api/users/stats
-// @desc    Lấy thống kê (tổng user, tổng lượt chơi)
-// @access  Private/Admin
+// 5. API THỐNG KÊ (CHO ADMIN) 
+// GET /api/users/stats
+// Lấy thống kê (tổng user, tổng lượt chơi)
+// Private/Admin
 router.get('/stats', [auth, admin], async (req, res) => {
   try {
     // Đếm tổng số user (học sinh)
